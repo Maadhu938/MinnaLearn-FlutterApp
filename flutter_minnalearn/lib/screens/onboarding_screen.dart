@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
-import 'main_screen.dart';
+import 'auth_screen.dart';
 import '../services/database_service.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -68,7 +68,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
     await Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => const MainScreen()),
+      MaterialPageRoute(builder: (context) => const AuthScreen()),
     );
   }
 

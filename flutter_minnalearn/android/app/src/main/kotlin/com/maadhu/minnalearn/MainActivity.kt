@@ -1,4 +1,4 @@
-package com.example.flutter_minnalearn
+package com.maadhu.minnalearn
 
 import android.content.Intent
 import android.os.Bundle

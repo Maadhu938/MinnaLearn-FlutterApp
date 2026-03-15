@@ -4,6 +4,8 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import '../services/database_service.dart';
 import '../services/study_timer_service.dart';
+import '../services/auth_service.dart';
+import 'auth_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -13,6 +15,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  final AuthService _authService = AuthService();
   int _vocabCount = 0;
   int _kanjiCount = 0;
   int _completedLessons = 0;
@@ -176,23 +179,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Learner',
+                        _authService.currentUser?.email?.split('@')[0] ?? 'Learner',
                         style: GoogleFonts.inter(
                           color: Colors.white,
-                          fontSize: 30,
+                          fontSize: 24,
                           fontWeight: FontWeight.bold,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'Japanese N5 Journey',
+                        _authService.currentUser?.email ?? 'Japanese N5 Journey',
                         style: GoogleFonts.inter(
                           color: Colors.white.withOpacity(0.9),
-                          fontSize: 16,
+                          fontSize: 14,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
+                ),
+                IconButton(
+                  icon: const Icon(LucideIcons.logOut, color: Colors.white),
+                  onPressed: () async {
+                    await _authService.signOut();
+                    if (!mounted) return;
+                    Navigator.of(context, rootNavigator: true).pushReplacement(
+                      MaterialPageRoute(builder: (_) => const AuthScreen()),
+                    );
+                  },
                 ),
               ],
             ),

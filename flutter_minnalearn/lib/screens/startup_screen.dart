@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../services/database_service.dart';
+import '../services/auth_service.dart';
 import 'main_screen.dart';
 import 'onboarding_screen.dart';
+import 'auth_screen.dart';
 
 class StartupScreen extends StatefulWidget {
   const StartupScreen({Key? key}) : super(key: key);
@@ -26,14 +28,21 @@ class _StartupScreenState extends State<StartupScreen> {
       final dbService = DatabaseService();
       await dbService.initialize();
       final hasSeenOnboarding = await dbService.hasSeenOnboarding();
+      final currentUser = AuthService().currentUser;
 
       if (!mounted) {
         return;
       }
 
-      final nextScreen = hasSeenOnboarding
-          ? const MainScreen()
-          : const OnboardingScreen();
+      Widget nextScreen;
+      
+      if (currentUser != null) {
+        nextScreen = const MainScreen();
+      } else if (hasSeenOnboarding) {
+        nextScreen = const AuthScreen();
+      } else {
+        nextScreen = const OnboardingScreen();
+      }
 
       await Navigator.of(context).pushReplacement(
         PageRouteBuilder(
