@@ -17,6 +17,13 @@ enum _KanjiPracticeMode {
 class KanjiScreen extends StatefulWidget {
   const KanjiScreen({Key? key}) : super(key: key);
 
+  /// Call this early (e.g. from HomeScreen.initState) to pre-load kanji data.
+  static Future<void> prefetch() async {
+    if (_KanjiScreenState._cachedKanji.isNotEmpty) return;
+    final lessons = await DatabaseService().getLessons();
+    _KanjiScreenState._cachedKanji = lessons.expand((l) => l.kanji).toList();
+  }
+
   @override
   State<KanjiScreen> createState() => _KanjiScreenState();
 }
@@ -26,7 +33,7 @@ class _KanjiScreenState extends State<KanjiScreen> {
 
   static List<Kanji> _cachedKanji = [];
   List<Kanji> _allKanji = _cachedKanji;
-  Future<List<Lesson>>? _lessonsFuture;
+  bool _isLoading = false;
   int _selectedKanjiIndex = 0;
   _KanjiPracticeMode _practiceMode = _KanjiPracticeMode.flashcards;
   bool _isFlashcardFlipped = false;
@@ -38,7 +45,33 @@ class _KanjiScreenState extends State<KanjiScreen> {
   void initState() {
     super.initState();
     StudyTimerService().startTimer();
-    _lessonsFuture = DatabaseService().getLessons();
+    if (_cachedKanji.isNotEmpty) {
+      _allKanji = _cachedKanji;
+      _prepareQuiz();
+    } else {
+      _loadKanji();
+    }
+  }
+
+  Future<void> _loadKanji() async {
+    _isLoading = true;
+    try {
+      final lessons = await DatabaseService().getLessons();
+      final kanji = lessons.expand((l) => l.kanji).toList();
+      _cachedKanji = kanji;
+      if (mounted) {
+        setState(() {
+          _allKanji = kanji;
+          _isLoading = false;
+          if (_allKanji.isNotEmpty) {
+            _selectedKanjiIndex = 0;
+            _prepareQuiz();
+          }
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -213,240 +246,229 @@ class _KanjiScreenState extends State<KanjiScreen> {
 
           // SCROLLABLE CONTENT
           Expanded(
-            child: FutureBuilder<List<Lesson>>(
-              future: _lessonsFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting && _allKanji.isEmpty) {
-                  return const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(40.0),
-                      child: CircularProgressIndicator(color: Color(0xFFEC4899)),
-                    ),
-                  );
-                }
+            child: _buildContent(),
+          ),
+        ],
+      ),
+    );
+  }
 
-                if (snapshot.hasData && _allKanji.isEmpty) {
-                  _allKanji = (snapshot.data ?? []).expand((lesson) => lesson.kanji).toList();
-                  _cachedKanji = _allKanji; // Cache for next time
-                  if (_allKanji.isNotEmpty) {
-                    _selectedKanjiIndex = 0;
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      if (mounted) setState(() => _prepareQuiz());
-                    });
-                  }
-                }
+  Widget _buildContent() {
+    if (_isLoading && _allKanji.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(40.0),
+          child: CircularProgressIndicator(color: Color(0xFFEC4899)),
+        ),
+      );
+    }
 
-                if (_allKanji.isEmpty && snapshot.connectionState == ConnectionState.done) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(32),
-                      child: Text(
-                        'No kanji available yet.',
-                        style: GoogleFonts.inter(
-                          color: const Color(0xFF6B7280),
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
-                  );
-                }
+    if (_allKanji.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Text(
+            'No kanji available yet.',
+            style: GoogleFonts.inter(
+              color: const Color(0xFF6B7280),
+              fontSize: 16,
+            ),
+          ),
+        ),
+      );
+    }
 
-                final kanji = _selectedKanji;
-                if (kanji == null) return const SizedBox.shrink();
+    final kanji = _selectedKanji;
+    if (kanji == null) return const SizedBox.shrink();
 
-                return SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Practice Options',
-                              style: GoogleFonts.inter(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: const Color(0xFF1F2937),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            ListView.separated(
-                              padding: EdgeInsets.zero,
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: _activities.length,
-                              separatorBuilder: (context, index) => const SizedBox(height: 12),
-                              itemBuilder: (context, index) {
-                                final activity = _activities[index];
-                                final isSelected = _practiceMode == activity['mode'];
-                                return GestureDetector(
-                                  onTap: () => _changeMode(activity['mode']),
-                                  child: AnimatedContainer(
-                                    duration: const Duration(milliseconds: 180),
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(24),
-                                      border: Border.all(
-                                        color: isSelected ? activity['iconColor'] : Colors.transparent,
-                                        width: 2,
-                                      ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.04),
-                                          blurRadius: 10,
-                                          offset: const Offset(0, 4),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Container(
-                                          width: 48,
-                                          height: 48,
-                                          decoration: BoxDecoration(
-                                            color: activity['color'],
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                          child: Icon(
-                                            activity['icon'],
-                                            color: activity['iconColor'],
-                                            size: 24,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 16),
-                                        Expanded(
-                                          child: Text(
-                                            activity['title'],
-                                            style: GoogleFonts.inter(
-                                              fontWeight: FontWeight.w600,
-                                              fontSize: 14,
-                                              color: const Color(0xFF1F2937),
-                                            ),
-                                          ),
-                                        ),
-                                        if (isSelected)
-                                          Icon(
-                                            LucideIcons.checkCircle2,
-                                            color: activity['iconColor'],
-                                            size: 20,
-                                          ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
+    return SingleChildScrollView(
+      key: const ValueKey('content'),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Practice Options',
+                  style: GoogleFonts.inter(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF1F2937),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ListView.separated(
+                  padding: EdgeInsets.zero,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: _activities.length,
+                  separatorBuilder: (context, index) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    final activity = _activities[index];
+                    final isSelected = _practiceMode == activity['mode'];
+                    return GestureDetector(
+                      onTap: () => _changeMode(activity['mode']),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: isSelected ? activity['iconColor'] : Colors.transparent,
+                            width: 2,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.04),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
                             ),
                           ],
                         ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: _buildPracticePanel(kanji),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
                         child: Row(
                           children: [
-                            Expanded(
-                              child: OutlinedButton(
-                                onPressed: _selectedKanjiIndex > 0 ? () => _setSelectedKanji(_selectedKanjiIndex - 1) : null,
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 14),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                                ),
-                                child: Text('Previous', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                            Container(
+                              width: 48,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                color: activity['color'],
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                activity['icon'],
+                                color: activity['iconColor'],
+                                size: 24,
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 16),
                             Expanded(
-                              child: ElevatedButton(
-                                onPressed: _selectedKanjiIndex < _allKanji.length - 1
-                                    ? () => _setSelectedKanji(_selectedKanjiIndex + 1)
-                                    : null,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFFEC4899),
-                                  padding: const EdgeInsets.symmetric(vertical: 14),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                                ),
-                                child: Text(
-                                  'Next',
-                                  style: GoogleFonts.inter(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                              child: Text(
+                                activity['title'],
+                                style: GoogleFonts.inter(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                  color: const Color(0xFF1F2937),
                                 ),
                               ),
                             ),
+                            if (isSelected)
+                              Icon(
+                                LucideIcons.checkCircle2,
+                                color: activity['iconColor'],
+                                size: 20,
+                              ),
                           ],
                         ),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'All Kanji',
-                              style: GoogleFonts.inter(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: const Color(0xFF1F2937),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            GridView.builder(
-                              padding: EdgeInsets.zero,
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 5,
-                                mainAxisSpacing: 12,
-                                crossAxisSpacing: 12,
-                              ),
-                              itemCount: _allKanji.length,
-                              itemBuilder: (context, index) {
-                                final item = _allKanji[index];
-                                final isSelected = index == _selectedKanjiIndex;
-                                return GestureDetector(
-                                  onTap: () => _setSelectedKanji(index),
-                                  child: AnimatedContainer(
-                                    duration: const Duration(milliseconds: 200),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: isSelected ? Border.all(color: Colors.pink, width: 2) : null,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.04),
-                                          blurRadius: 10,
-                                          offset: const Offset(0, 4),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        item.character,
-                                        style: GoogleFonts.inter(
-                                          fontSize: 24,
-                                          fontWeight: FontWeight.bold,
-                                          color: isSelected ? Colors.pink : const Color(0xFF1F2937),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                            const SizedBox(height: 48),
-                          ],
-                        ),
-                      ),
-                    ],
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: _buildPracticePanel(kanji),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _selectedKanjiIndex > 0 ? () => _setSelectedKanji(_selectedKanjiIndex - 1) : null,
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                    ),
+                    child: Text('Previous', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
                   ),
-                );
-              },
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _selectedKanjiIndex < _allKanji.length - 1
+                        ? () => _setSelectedKanji(_selectedKanjiIndex + 1)
+                        : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFEC4899),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                    ),
+                    child: Text(
+                      'Next',
+                      style: GoogleFonts.inter(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'All Kanji',
+                  style: GoogleFonts.inter(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF1F2937),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                GridView.builder(
+                  padding: EdgeInsets.zero,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 5,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                  ),
+                  itemCount: _allKanji.length,
+                  itemBuilder: (context, index) {
+                    final item = _allKanji[index];
+                    final isSelected = index == _selectedKanjiIndex;
+                    return GestureDetector(
+                      onTap: () => _setSelectedKanji(index),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: isSelected ? Border.all(color: Colors.pink, width: 2) : null,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.04),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Center(
+                          child: Text(
+                            item.character,
+                            style: GoogleFonts.inter(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: isSelected ? Colors.pink : const Color(0xFF1F2937),
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 48),
+              ],
             ),
           ),
         ],

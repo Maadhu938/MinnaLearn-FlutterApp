@@ -20,6 +20,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     DatabaseService.refreshNotifier.addListener(_refresh);
+    KanjiScreen.prefetch(); // Pre-load kanji data in background
   }
 
   @override

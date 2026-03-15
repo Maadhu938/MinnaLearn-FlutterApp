@@ -205,79 +205,87 @@ class _TypingTestScreenState extends State<TypingTestScreen> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [Color(0xFF34D399), Color(0xFF10B981)],
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(24),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [Color(0xFF34D399), Color(0xFF10B981)],
+                                ),
+                                borderRadius: BorderRadius.circular(28),
+                              ),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    'Type the English meaning',
+                                    style: GoogleFonts.inter(
+                                      color: Colors.white.withOpacity(0.92),
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 18),
+                                  Text(
+                                    _questions[_currentIndex].kanaText,
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.inter(
+                                      color: Colors.white,
+                                      fontSize: 32,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            TextField(
+                              controller: _controller,
+                              enabled: !_answered,
+                              textInputAction: TextInputAction.done,
+                              onSubmitted: (_) => _submitAnswer(),
+                              decoration: InputDecoration(
+                                hintText: 'Type the meaning here',
+                                filled: true,
+                                fillColor: Colors.white,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                  borderSide: BorderSide.none,
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            if (_answered)
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(18),
+                                decoration: BoxDecoration(
+                                  color: _wasCorrect ? const Color(0xFFECFDF5) : const Color(0xFFFEF2F2),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: _wasCorrect ? const Color(0xFFA7F3D0) : const Color(0xFFFECACA),
+                                  ),
+                                ),
+                                child: Text(
+                                  _wasCorrect
+                                      ? 'Correct! "${_questions[_currentIndex].meaning}"'
+                                      : 'Correct answer: ${_questions[_currentIndex].meaning}',
+                                  style: GoogleFonts.inter(
+                                    color: _wasCorrect ? const Color(0xFF065F46) : const Color(0xFF991B1B),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
-                        borderRadius: BorderRadius.circular(28),
-                      ),
-                      child: Column(
-                        children: [
-                          Text(
-                            'Type the English meaning',
-                            style: GoogleFonts.inter(
-                              color: Colors.white.withOpacity(0.92),
-                              fontSize: 14,
-                            ),
-                          ),
-                          const SizedBox(height: 18),
-                          Text(
-                            _questions[_currentIndex].kanaText,
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.inter(
-                              color: Colors.white,
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
                       ),
                     ),
-                    const SizedBox(height: 24),
-                    TextField(
-                      controller: _controller,
-                      enabled: !_answered,
-                      textInputAction: TextInputAction.done,
-                      onSubmitted: (_) => _submitAnswer(),
-                      decoration: InputDecoration(
-                        hintText: 'Type the meaning here',
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(20),
-                          borderSide: BorderSide.none,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    if (_answered)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(18),
-                        decoration: BoxDecoration(
-                          color: _wasCorrect ? const Color(0xFFECFDF5) : const Color(0xFFFEF2F2),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: _wasCorrect ? const Color(0xFFA7F3D0) : const Color(0xFFFECACA),
-                          ),
-                        ),
-                        child: Text(
-                          _wasCorrect
-                              ? 'Correct! "${_questions[_currentIndex].meaning}"'
-                              : 'Correct answer: ${_questions[_currentIndex].meaning}',
-                          style: GoogleFonts.inter(
-                            color: _wasCorrect ? const Color(0xFF065F46) : const Color(0xFF991B1B),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    const Spacer(),
+                    const SizedBox(height: 16),
                     Row(
                       children: [
                         Expanded(

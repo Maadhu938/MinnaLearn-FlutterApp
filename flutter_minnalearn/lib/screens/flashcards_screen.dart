@@ -70,11 +70,6 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
     );
   }
 
-  void _handleDifficulty(String level) {
-    debugPrint('Marked as: $level');
-    _handleNext();
-  }
-
   @override
   void initState() {
     super.initState();
@@ -163,19 +158,20 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
             // Flashcard
             Expanded(
               child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      GestureDetector(
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        GestureDetector(
                         onTap: _handleFlip,
                         onHorizontalDragEnd: _handleCardSwipe,
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 300),
                           curve: Curves.easeInOut,
                           width: double.infinity,
-                          constraints: const BoxConstraints(minHeight: 400),
+                          constraints: const BoxConstraints(minHeight: 280),
                           padding: const EdgeInsets.all(32),
                           decoration: BoxDecoration(
                             color: Colors.white,
@@ -286,22 +282,8 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
                   ),
                 ),
               ),
-            ),
-
-            // Difficulty buttons
-            if (_isFlipped)
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Row(
-                  children: [
-                    Expanded(child: _buildDifficultyButton('Forgot', Colors.red, () => _handleDifficulty('forgot'))),
-                    const SizedBox(width: 12),
-                    Expanded(child: _buildDifficultyButton('Good', Colors.orange, () => _handleDifficulty('good'))),
-                    const SizedBox(width: 12),
-                    Expanded(child: _buildDifficultyButton('Easy', Colors.green, () => _handleDifficulty('easy'))),
-                  ],
-                ),
               ),
+            ),
           ],
         ),
       ),
@@ -327,19 +309,6 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
         ),
         child: Icon(icon, color: enabled ? const Color(0xFF374151) : Colors.grey.shade300, size: 24),
       ),
-    );
-  }
-
-  Widget _buildDifficultyButton(String label, Color color, VoidCallback onTap) {
-    return OutlinedButton(
-      onPressed: onTap,
-      style: OutlinedButton.styleFrom(
-        foregroundColor: color,
-        side: BorderSide(color: color.withOpacity(0.3), width: 2),
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      ),
-      child: Text(label, style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
     );
   }
 }
