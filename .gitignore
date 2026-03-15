@@ -1,4 +1,6 @@
 # Miscellaneous
+*.iml
+.idea/
 *.class
 *.lock
 *.log
@@ -6,8 +8,6 @@
 *.swp
 .buildlog/
 .history
-
-
 
 # Flutter repo-specific
 /bin/cache/
@@ -31,7 +31,7 @@ analysis_benchmark.json
 # packages file containing multi-root paths
 .packages.generated
 
-# Flutter/Dart/Pub related
+# Flutter / Dart / Pub
 **/doc/api/
 .dart_tool/
 .flutter-plugins
@@ -46,7 +46,7 @@ linked_*.ds
 unlinked.ds
 unlinked_spec.ds
 
-# Android related
+# Android
 **/android/**/gradle-wrapper.jar
 .gradle/
 **/android/captures/
@@ -54,10 +54,21 @@ unlinked_spec.ds
 **/android/gradlew.bat
 **/android/local.properties
 **/android/**/GeneratedPluginRegistrant.java
-**/android/key.properties
-*.jks
 
-# iOS/XCode related
+# Extra Android ignores
+gradle-wrapper.jar
+/captures/
+/gradlew
+/gradlew.bat
+/local.properties
+GeneratedPluginRegistrant.java
+
+# Never publish signing keys
+key.properties
+**/*.keystore
+**/*.jks
+
+# iOS / XCode
 **/ios/**/*.mode1v3
 **/ios/**/*.mode2v3
 **/ios/**/*.moved-aside
@@ -110,7 +121,7 @@ coverage/
 # Symbols
 app.*.symbols
 
-# Exceptions to above rules.
+# Exceptions
 !**/ios/**/default.mode1v3
 !**/ios/**/default.mode2v3
 !**/ios/**/default.pbxuser
