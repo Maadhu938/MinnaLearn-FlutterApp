@@ -512,33 +512,43 @@ class DatabaseService {
   // Lesson Operations
   Future<List<Lesson>> getLessons() async {
     final db = await database;
+    
+    // 1. Get all basic lesson info
     final List<Map<String, dynamic>> lessonMaps = await db.query(
       'lessons',
       orderBy: 'id ASC',
     );
     
-    List<Lesson> lessons = [];
-    for (var lessonMap in lessonMaps) {
-      final vocabData = await db.query(
-        'vocabulary',
-        where: 'lesson_id = ?',
-        whereArgs: [lessonMap['id']],
-        orderBy: 'id ASC',
-      );
-      final kanjiData = await db.query(
-        'kanji',
-        where: 'lesson_id = ?',
-        whereArgs: [lessonMap['id']],
-        orderBy: 'id ASC',
-      );
+    if (lessonMaps.isEmpty) return [];
 
-      lessons.add(Lesson.fromMap(
-        lessonMap,
-        vocab: vocabData.map((v) => Vocabulary.fromMap(v)).toList(),
-        kanji: kanjiData.map((k) => Kanji.fromMap(k)).toList(),
-      ));
+    // 2. Get all vocabulary in ONE query instead of per-lesson
+    final List<Map<String, dynamic>> allVocab = await db.query('vocabulary', orderBy: 'lesson_id ASC, id ASC');
+    
+    // 3. Get all kanji in ONE query
+    final List<Map<String, dynamic>> allKanji = await db.query('kanji', orderBy: 'lesson_id ASC, id ASC');
+
+    // Group them by lesson_id for fast lookup
+    final Map<int, List<Vocabulary>> vocabByLesson = {};
+    for (final v in allVocab) {
+      final lessonId = v['lesson_id'] as int;
+      vocabByLesson.putIfAbsent(lessonId, () => []).add(Vocabulary.fromMap(v));
     }
-    return lessons;
+
+    final Map<int, List<Kanji>> kanjiByLesson = {};
+    for (final k in allKanji) {
+      final lessonId = k['lesson_id'] as int;
+      kanjiByLesson.putIfAbsent(lessonId, () => []).add(Kanji.fromMap(k));
+    }
+    
+    // 4. Build Lesson objects
+    return lessonMaps.map((map) {
+      final id = map['id'] as int;
+      return Lesson.fromMap(
+        map,
+        vocab: vocabByLesson[id] ?? [],
+        kanji: kanjiByLesson[id] ?? [],
+      );
+    }).toList();
   }
 
   Future<void> updateLessonProgress(int id, double progress) async {

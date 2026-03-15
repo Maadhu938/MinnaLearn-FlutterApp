@@ -207,34 +207,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                     Row(
                       children: [
-                        Expanded(
-                          child: _buildStatItem(
-                            LucideIcons.bookOpen,
-                            _vocabCount.toString(),
-                            'Vocab',
-                            Colors.blue.shade50,
-                            Colors.blue,
-                          ),
+                        _buildStatItemExpanded(
+                          LucideIcons.bookOpen,
+                          _vocabCount.toString(),
+                          'Vocab',
+                          Colors.blue.shade50,
+                          Colors.blue,
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildStatItem(
-                            LucideIcons.sparkles,
-                            _kanjiCount.toString(),
-                            'Kanji',
-                            Colors.purple.shade50,
-                            Colors.purple,
-                          ),
+                        const SizedBox(width: 8),
+                        _buildStatItemExpanded(
+                          LucideIcons.sparkles,
+                          _kanjiCount.toString(),
+                          'Kanji',
+                          Colors.purple.shade50,
+                          Colors.purple,
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildStatItem(
-                            LucideIcons.flame,
-                            _streak.toString(),
-                            'Streak',
-                            Colors.orange.shade50,
-                            Colors.orange,
-                          ),
+                        const SizedBox(width: 8),
+                        _buildStatItemExpanded(
+                          LucideIcons.flame,
+                          _streak.toString(),
+                          'Streak',
+                          Colors.orange.shade50,
+                          Colors.orange,
                         ),
                       ],
                     ),
@@ -511,6 +505,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildStatItemExpanded(IconData icon, String value, String label, Color bgColor, Color iconColor) {
+    return Expanded(
+      child: _buildStatItem(icon, value, label, bgColor, iconColor),
     );
   }
 }

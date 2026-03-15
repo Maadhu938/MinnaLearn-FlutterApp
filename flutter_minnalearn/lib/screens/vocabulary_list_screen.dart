@@ -61,8 +61,12 @@ class _VocabularyListScreenState extends State<VocabularyListScreen> {
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Japanese voice is not available on this device yet.'),
+      SnackBar(
+        content: const Text('Japanese voice data is missing. Please download it in settings.'),
+        action: SnackBarAction(
+          label: 'SETTINGS',
+          onPressed: () => SpeechService().openTtsSettings(),
+        ),
       ),
     );
   }

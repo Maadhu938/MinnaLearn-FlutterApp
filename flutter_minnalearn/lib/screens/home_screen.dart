@@ -123,32 +123,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 return Transform.translate(
                   offset: const Offset(0, -30),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Expanded(
-                          child: StatCard(
-                            value: vocabCount.toString(),
-                            label: 'Vocabulary',
-                            bgColor: Colors.blue.shade50,
-                          ),
-                        ),
+                        _buildStatCardExpanded(vocabCount.toString(), 'Vocab', Colors.blue.shade50),
                         const SizedBox(width: 8),
-                        Expanded(
-                          child: StatCard(
-                            value: kanjiCount.toString(),
-                            label: 'Kanji',
-                            bgColor: Colors.purple.shade50,
-                          ),
-                        ),
+                        _buildStatCardExpanded(kanjiCount.toString(), 'Kanji', Colors.purple.shade50),
                         const SizedBox(width: 8),
-                        Expanded(
-                          child: StatCard(
-                            value: studyTime,
-                            label: 'Study Time',
-                            bgColor: Colors.pink.shade50,
-                          ),
-                        ),
+                        _buildStatCardExpanded(studyTime, 'Time', Colors.pink.shade50),
                       ],
                     ),
                   ),
@@ -227,6 +210,16 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildStatCardExpanded(String value, String label, Color bgColor) {
+    return Expanded(
+      child: StatCard(
+        value: value,
+        label: label,
+        bgColor: bgColor,
       ),
     );
   }

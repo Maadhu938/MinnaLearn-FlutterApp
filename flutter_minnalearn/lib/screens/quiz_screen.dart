@@ -255,8 +255,8 @@ class _QuizScreenState extends State<QuizScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -293,7 +293,7 @@ class _QuizScreenState extends State<QuizScreen> {
               _buildStatRow('Accuracy', '${percentage.toInt()}%'),
               const SizedBox(height: 12),
               _buildStatRow('Lesson', 'Lesson ${widget.lesson.id}'),
-              const SizedBox(height: 60),
+              const SizedBox(height: 48),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
