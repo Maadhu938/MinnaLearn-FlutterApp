@@ -747,11 +747,17 @@ class DatabaseService {
 
   Future<void> deleteAllUserData() async {
     final db = await database;
+    // Reset lessons progress
+    await db.update('lessons', {'completed': 0, 'progress': 0.0});
+    // Clear user stats and re-add defaults
     await db.delete('user_stats');
-    await db.delete('lesson_progress');
+    await _ensureUserStatsDefaults(db);
+    // Clear all user-specific data
     await db.delete('learned_kanji');
     await db.delete('bookmarks');
     await db.delete('achievements');
+    await db.delete('study_sessions');
+    await db.delete('game_scores');
     notifyDataChanged();
   }
 }
