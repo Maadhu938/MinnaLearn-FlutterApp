@@ -16,7 +16,7 @@
 - **Flashcards** - Tap to reveal meaning and readings
 - **Writing Practice** - Stroke tracing on a drawing board
 - **Kanji Quiz** - Multiple choice meaning quiz
-- 107 JLPT N5 kanji across all lessons
+- 100 JLPT N5 kanji across all lessons
 
 ### Interactive Learning Modes
 - **Flashcards** - Swipeable cards with text-to-speech pronunciation
