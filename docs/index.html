@@ -19,62 +19,74 @@
     h2 { font-size: 20px; margin-top: 28px; }
     p { margin: 8px 0; }
     a { color: #EC4899; }
+    ul { padding-left: 24px; }
+    li { margin-bottom: 6px; }
   </style>
 </head>
 <body>
   <h1>Privacy Policy</h1>
-  <p class="updated">Last updated: March 29, 2026</p>
+  <p class="updated">Last updated: March 31, 2026</p>
 
-  <p>MinnaLearn is a Japanese language learning app. We value your privacy and are committed to protecting your personal data.</p>
+  <p>MinnaLearn is a Japanese language learning app developed to help users learn Japanese at the JLPT N5 level. We value your privacy and are committed to protecting your personal data.</p>
 
   <h2>1. Data We Collect</h2>
   <p>MinnaLearn may collect and store the following information:</p>
   <ul>
-    <li>Your name and email address (when you sign in with Google)</li>
-    <li>Study progress, including lesson completion, vocabulary learned, kanji studied, and game scores</li>
-    <li>App usage data such as streaks, bookmarks, and achievements</li>
+    <li>Your name and email address (via Firebase Authentication, including Google Sign-In)</li>
+    <li>Study progress, including lesson completion, study time, streaks, quiz scores, bookmarked vocabulary, learned kanji, and achievements</li>
+    <li>All progress data is stored locally on your device using SQLite and synced to Firebase Cloud Firestore if you are signed in</li>
   </ul>
 
   <h2>2. How We Use Your Data</h2>
   <p>Your data is used solely to:</p>
   <ul>
-    <li>Provide and improve the app experience</li>
+    <li>Create and manage your account</li>
     <li>Track your learning progress and streaks</li>
-    <li>Save and sync your data across devices using Firebase</li>
+    <li>Save and sync your data across devices using Firebase Cloud Firestore</li>
     <li>Send local study reminders and notifications (with your permission)</li>
   </ul>
 
-  <h2>3. Data Storage &amp; Security</h2>
+  <h2>3. Data Sharing</h2>
+  <ul>
+    <li>Your data is shared with <strong>Firebase (Google)</strong> for authentication and cloud sync</li>
+    <li>We do <strong>not</strong> sell, rent, or share your personal data with any other third parties</li>
+    <li>No data is used for advertising or profiling purposes</li>
+  </ul>
+
+  <h2>4. Data Storage &amp; Security</h2>
   <ul>
     <li>Your study data is stored locally on your device using SQLite</li>
     <li>When signed in, your data is synced to Google Firebase (Firestore)</li>
-    <li>Firebase services are governed by <a href="https://policies.google.com/privacy" target="_blank">Google's Privacy Policy</a></li>
+    <li>Firebase provides industry-standard encryption for data in transit and at rest</li>
+    <li>You can use the app offline without signing in; all data stays on your device</li>
   </ul>
 
-  <h2>4. Third-Party Services</h2>
+  <h2>5. Third-Party Services</h2>
   <p>MinnaLearn uses the following third-party services:</p>
   <ul>
-    <li><strong>Firebase (Google)</strong> - for authentication, cloud database, and storage</li>
-    <li><strong>Google Sign-In</strong> - for user authentication</li>
+    <li><strong>Firebase Authentication (Google)</strong> - for sign-in functionality</li>
+    <li><strong>Firebase Cloud Firestore</strong> - for cloud sync of your progress</li>
   </ul>
-  <p>These services are governed by Google's Privacy Policy.</p>
+  <p>These services are governed by <a href="https://policies.google.com/privacy" target="_blank">Google's Privacy Policy</a>.</p>
 
-  <h2>5. Your Rights</h2>
+  <h2>6. Your Rights</h2>
   <p>You have the right to:</p>
   <ul>
     <li>Access your personal data stored in the app</li>
-    <li>Delete your account and all associated data from the app settings</li>
+    <li>Request correction of your personal data</li>
+    <li>Delete your account and all associated data from the app settings (Profile → Delete Account)</li>
     <li>Sign out at any time</li>
   </ul>
+  <p>For more details, see our <a href="delete_account.html">Account &amp; Data Deletion</a> page.</p>
 
-  <h2>6. Children's Privacy</h2>
+  <h2>7. Children's Privacy</h2>
   <p>MinnaLearn does not knowingly collect personal information from children under 13. If you believe a child has provided personal data, please contact us.</p>
 
-  <h2>7. Changes to This Policy</h2>
+  <h2>8. Changes to This Policy</h2>
   <p>We may update this Privacy Policy from time to time. Changes will be posted on this page.</p>
 
-  <h2>8. Contact</h2>
+  <h2>9. Contact</h2>
   <p>If you have any questions about this Privacy Policy, please contact us at:</p>
-  <p><strong>Email:</strong> maadhumani938@gmail.com</p>
+  <p><strong>Email:</strong> maadhuavati7@gmail.com</p>
 </body>
 </html>
