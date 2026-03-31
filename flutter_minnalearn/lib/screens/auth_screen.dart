@@ -80,7 +80,9 @@ class _AuthScreenState extends State<AuthScreen> {
       
       if (!mounted) return;
       // Clear local data and pull from cloud for this account
-      await DatabaseService().deleteAllUserData();
+      try {
+        await DatabaseService().deleteAllUserData();
+      } catch (_) {}
       await CloudService().syncAll();
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const MainScreen()),
@@ -100,7 +102,9 @@ class _AuthScreenState extends State<AuthScreen> {
       final userCreds = await _authService.signInWithGoogle();
       if (userCreds != null && mounted) {
         // Clear local data and pull from cloud for this account
-        await DatabaseService().deleteAllUserData();
+        try {
+          await DatabaseService().deleteAllUserData();
+        } catch (_) {}
         await CloudService().syncAll();
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const MainScreen()),
