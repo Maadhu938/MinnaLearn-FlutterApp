@@ -1,4 +1,5 @@
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/foundation.dart';
 
 class AudioService {
   AudioService._internal();
@@ -11,7 +12,7 @@ class AudioService {
     try {
       await _player.play(AssetSource('audio/correct.mp3'));
     } catch (e) {
-      print('Audio error: $e');
+      debugPrint('Audio error: $e');
     }
   }
 
@@ -19,7 +20,7 @@ class AudioService {
     try {
       await _player.play(AssetSource('audio/wrong.mp3'));
     } catch (e) {
-      print('Audio error: $e');
+      debugPrint('Audio error: $e');
     }
   }
 
@@ -27,7 +28,7 @@ class AudioService {
     try {
       await _player.play(AssetSource('audio/click.mp3'));
     } catch (e) {
-      print('Audio error: $e');
+      debugPrint('Audio error: $e');
     }
   }
 
@@ -35,7 +36,7 @@ class AudioService {
     try {
       await _player.play(AssetSource('audio/success.mp3'));
     } catch (e) {
-      print('Audio error: $e');
+      debugPrint('Audio error: $e');
     }
   }
 }

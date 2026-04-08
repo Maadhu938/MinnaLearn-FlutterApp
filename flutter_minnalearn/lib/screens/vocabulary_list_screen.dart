@@ -25,6 +25,7 @@ class _VocabularyListScreenState extends State<VocabularyListScreen> {
   void initState() {
     super.initState();
     StudyTimerService().startTimer();
+    DatabaseService().updateStreak();
     _loadBookmarks();
   }
 
@@ -57,20 +58,21 @@ class _VocabularyListScreenState extends State<VocabularyListScreen> {
     }
 
     if (didSpeak) {
-      DatabaseService().updateStreak();
+      return;
     }
 
-    if (!mounted || didSpeak) {
+    if (!mounted) {
       return;
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Japanese voice data is missing. Please download it in settings.'),
+        content: const Text('Japanese voice not available. Download it from Settings → Languages → Text-to-speech voice'),
         action: SnackBarAction(
-          label: 'SETTINGS',
+          label: 'OPEN SETTINGS',
           onPressed: () => SpeechService().openTtsSettings(),
         ),
+        duration: const Duration(seconds: 5),
       ),
     );
   }

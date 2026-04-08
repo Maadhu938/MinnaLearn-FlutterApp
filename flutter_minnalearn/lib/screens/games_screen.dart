@@ -21,6 +21,7 @@ class _GamesScreenState extends State<GamesScreen> {
   List<Map<String, dynamic>> _recentScores = [];
   Lesson? _gameLesson;
   bool _isLoading = true;
+  bool _loadingInProgress = false;
 
   @override
   void initState() {
@@ -29,6 +30,9 @@ class _GamesScreenState extends State<GamesScreen> {
   }
 
   Future<void> _loadData() async {
+    if (_loadingInProgress) return;
+    _loadingInProgress = true;
+
     final db = DatabaseService();
     final scoresFuture = db.getRecentGameScores(10);
     final lessonsFuture = db.getLessons();
@@ -38,6 +42,7 @@ class _GamesScreenState extends State<GamesScreen> {
     final playableLessons = lessons.where((lesson) => lesson.vocabulary.length >= 5).toList();
 
     if (!mounted) {
+      _loadingInProgress = false;
       return;
     }
 
@@ -45,6 +50,7 @@ class _GamesScreenState extends State<GamesScreen> {
       _recentScores = scores;
       _gameLesson = _buildGameLesson(playableLessons);
       _isLoading = false;
+      _loadingInProgress = false;
     });
   }
 
@@ -132,100 +138,111 @@ class _GamesScreenState extends State<GamesScreen> {
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(24, 24, 24, 100),
                 children: [
-                  GridView.count(
+                  GridView.builder(
                     padding: EdgeInsets.zero,
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 16,
-                    crossAxisSpacing: 16,
-                    childAspectRatio: 0.85,
-                    children: [
-                      _buildGameCard(
-                        'Match Game',
-                        _gameLesson == null
-                            ? 'Add more vocabulary to unlock'
-                            : 'Match kana with meanings',
-                        LucideIcons.shuffle,
-                        const [Color(0xFF60A5FA), Color(0xFF3B82F6)],
-                        isLocked: _gameLesson == null,
-                        onTap: _gameLesson == null
-                            ? null
-                            : () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => MatchingGameScreen(
-                                      lesson: _gameLesson!,
-                                    ),
-                                  ),
-                                ).then((_) => _loadData());
-                              },
-                      ),
-                      _buildGameCard(
-                        'True or False',
-                        _gameLesson == null
-                            ? 'Add more vocabulary to unlock'
-                            : 'Is this kana and meaning a match?',
-                        LucideIcons.checkCircle,
-                        const [Color(0xFFC084FC), Color(0xFFA855F7)],
-                        isLocked: _gameLesson == null,
-                        onTap: _gameLesson == null
-                            ? null
-                            : () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => TrueOrFalseScreen(
-                                      lesson: _gameLesson!,
-                                    ),
-                                  ),
-                                ).then((_) => _loadData());
-                              },
-                      ),
-                      _buildGameCard(
-                        'Typing Test',
-                        _gameLesson == null
-                            ? 'Add more vocabulary to unlock'
-                            : 'Type the English meaning fast',
-                        LucideIcons.keyboard,
-                        const [Color(0xFF34D399), Color(0xFF10B981)],
-                        isLocked: _gameLesson == null,
-                        onTap: _gameLesson == null
-                            ? null
-                            : () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => TypingTestScreen(
-                                      lesson: _gameLesson!,
-                                    ),
-                                  ),
-                                ).then((_) => _loadData());
-                              },
-                      ),
-                      _buildGameCard(
-                        'Kana Puzzle',
-                        _gameLesson == null
-                            ? 'Add more vocabulary to unlock'
-                            : 'Build the Kana from meaning',
-                        LucideIcons.puzzle,
-                        const [Color(0xFFFB923C), Color(0xFFF97316)],
-                        isLocked: _gameLesson == null,
-                        onTap: _gameLesson == null
-                            ? null
-                            : () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => KanaPuzzleScreen(
-                                      lesson: _gameLesson!,
-                                    ),
-                                  ),
-                                ).then((_) => _loadData());
-                              },
-                      ),
-                    ],
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: MediaQuery.of(context).size.width > 600 ? 4 : 2,
+                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 16,
+                      childAspectRatio: MediaQuery.of(context).size.width > 600 ? 1.2 : 0.85,
+                    ),
+                    itemCount: 4,
+                    itemBuilder: (context, index) {
+                      switch (index) {
+                        case 0:
+                          return _buildGameCard(
+                            'Match Game',
+                            _gameLesson == null
+                                ? 'Add more vocabulary to unlock'
+                                : 'Match kana with meanings',
+                            LucideIcons.shuffle,
+                            const [Color(0xFF60A5FA), Color(0xFF3B82F6)],
+                            isLocked: _gameLesson == null,
+                            onTap: _gameLesson == null
+                                ? null
+                                : () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => MatchingGameScreen(
+                                          lesson: _gameLesson!,
+                                        ),
+                                      ),
+                                    ).then((_) => _loadData());
+                                  },
+                          );
+                        case 1:
+                          return _buildGameCard(
+                            'True or False',
+                            _gameLesson == null
+                                ? 'Add more vocabulary to unlock'
+                                : 'Is this kana and meaning a match?',
+                            LucideIcons.checkCircle,
+                            const [Color(0xFFC084FC), Color(0xFFA855F7)],
+                            isLocked: _gameLesson == null,
+                            onTap: _gameLesson == null
+                                ? null
+                                : () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => TrueOrFalseScreen(
+                                          lesson: _gameLesson!,
+                                        ),
+                                      ),
+                                    ).then((_) => _loadData());
+                                  },
+                          );
+                        case 2:
+                          return _buildGameCard(
+                            'Typing Test',
+                            _gameLesson == null
+                                ? 'Add more vocabulary to unlock'
+                                : 'Type the English meaning fast',
+                            LucideIcons.keyboard,
+                            const [Color(0xFF34D399), Color(0xFF10B981)],
+                            isLocked: _gameLesson == null,
+                            onTap: _gameLesson == null
+                                ? null
+                                : () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => TypingTestScreen(
+                                          lesson: _gameLesson!,
+                                        ),
+                                      ),
+                                    ).then((_) => _loadData());
+                                  },
+                          );
+                        case 3:
+                          return _buildGameCard(
+                            'Kana Puzzle',
+                            _gameLesson == null
+                                ? 'Add more vocabulary to unlock'
+                                : 'Build the Kana from meaning',
+                            LucideIcons.puzzle,
+                            const [Color(0xFFFB923C), Color(0xFFF97316)],
+                            isLocked: _gameLesson == null,
+                            onTap: _gameLesson == null
+                                ? null
+                                : () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => KanaPuzzleScreen(
+                                          lesson: _gameLesson!,
+                                        ),
+                                      ),
+                                    ).then((_) => _loadData());
+                                  },
+                          );
+                        default:
+                          return const SizedBox();
+                      }
+                    },
                   ),
                   const SizedBox(height: 32),
                   Text(

@@ -111,5 +111,7 @@ class _KanjiPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _KanjiPainter oldDelegate) => true;
+  bool shouldRepaint(covariant _KanjiPainter oldDelegate) =>
+      strokes.length != oldDelegate.strokes.length ||
+      currentStroke.length != oldDelegate.currentStroke.length;
 }

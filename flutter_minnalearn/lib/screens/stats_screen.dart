@@ -15,6 +15,7 @@ class _StatsScreenState extends State<StatsScreen> {
   List<Map<String, dynamic>> _weeklyTime = [];
   Map<String, double> _mastery = {'vocabulary': 0.0, 'kanji': 0.0, 'grammar': 0.0};
   bool _isLoading = false;
+  bool _disposed = false;
 
   @override
   void initState() {
@@ -25,6 +26,7 @@ class _StatsScreenState extends State<StatsScreen> {
 
   @override
   void dispose() {
+    _disposed = true;
     DatabaseService.refreshNotifier.removeListener(_loadStats);
     super.dispose();
   }
@@ -35,7 +37,7 @@ class _StatsScreenState extends State<StatsScreen> {
     final weekly = await db.getWeeklyStudyTime();
     final mastery = await db.getMasteryPercentages();
 
-    if (mounted) {
+    if (mounted && !_disposed) {
       setState(() {
         _streak = streak;
         _weeklyTime = weekly;

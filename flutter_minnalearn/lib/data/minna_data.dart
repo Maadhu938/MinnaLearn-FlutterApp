@@ -11,8 +11,8 @@ final List<Lesson> seedLessons = [
       Vocabulary(japanese: 'さん', romaji: 'san', meaning: 'Mr./Ms.', type: VocabularyType.vocabulary),
       Vocabulary(japanese: 'せんせい (先生)', romaji: 'sensei', meaning: 'teacher', type: VocabularyType.vocabulary),
       Vocabulary(japanese: 'がくせい (学生)', romaji: 'gakusei', meaning: 'student', type: VocabularyType.vocabulary),
-      Vocabulary(japanese: 'かいしゃいん (会社員)', romaji: 'kaishayin', meaning: 'company employee', type: VocabularyType.vocabulary),
-      Vocabulary(japanese: 'ぎんこういん (銀行員)', romaji: 'ginkoyin', meaning: 'bank employee', type: VocabularyType.vocabulary),
+      Vocabulary(japanese: 'かいしゃいん (会社員)', romaji: 'kaishain', meaning: 'company employee', type: VocabularyType.vocabulary),
+      Vocabulary(japanese: 'ぎんこういん (銀行員)', romaji: 'ginkouin', meaning: 'bank employee', type: VocabularyType.vocabulary),
       Vocabulary(japanese: 'いしゃ (医者)', romaji: 'isha', meaning: 'doctor', type: VocabularyType.vocabulary),
     ],
     kanji: [
@@ -57,8 +57,8 @@ final List<Lesson> seedLessons = [
     kanji: [
       Kanji(character: '七', meaning: 'seven', onReading: 'SHICHI', kunReading: 'nana'),
       Kanji(character: '八', meaning: 'eight', onReading: 'HACHI', kunReading: 'ya(tsu)'),
-      Kanji(character: '九', meaning: 'nine', onReading: 'KYU', kunReading: 'kokono(tsu)'),
-      Kanji(character: '十', meaning: 'ten', onReading: 'JYU', kunReading: 'to'),
+      Kanji(character: '九', meaning: 'nine', onReading: 'KYUU', kunReading: 'kokono(tsu)'),
+      Kanji(character: '十', meaning: 'ten', onReading: 'JUU', kunReading: 'to'),
     ],
   ),
   Lesson(

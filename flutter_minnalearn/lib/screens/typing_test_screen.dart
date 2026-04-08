@@ -35,6 +35,7 @@ class _TypingTestScreenState extends State<TypingTestScreen> {
   void initState() {
     super.initState();
     StudyTimerService().startTimer();
+    DatabaseService().updateStreak();
     _setupQuiz();
   }
 
@@ -148,7 +149,7 @@ class _TypingTestScreenState extends State<TypingTestScreen> {
   String _normalize(String value) {
     return value
         .toLowerCase()
-        .replaceAll(RegExp(r'[^a-z0-9\s~-]'), ' ')
+        .replaceAll(RegExp(r'[^a-z0-9\s~\-]'), ' ')
         .replaceAll(RegExp(r'\s+'), ' ')
         .trim();
   }

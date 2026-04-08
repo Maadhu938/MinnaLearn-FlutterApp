@@ -42,8 +42,10 @@ class StudyTimerService {
 
   Future<void> _saveToDatabase() async {
     if (_secondsElapsed > 0) {
-      await DatabaseService().addStudyTime(_secondsElapsed);
+      // Capture value and reset immediately to avoid race condition
+      final elapsed = _secondsElapsed;
       _secondsElapsed = 0;
+      await DatabaseService().addStudyTime(elapsed);
     }
   }
 
@@ -54,8 +56,11 @@ class StudyTimerService {
     
     if (hours > 0) {
       return '${hours}h ${minutes}m';
-    } else {
+    } else if (minutes > 0) {
       return '${minutes}m';
+    } else {
+      final int totalSecs = totalSeconds % 60;
+      return '${totalSecs}s';
     }
   }
 }

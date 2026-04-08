@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import '../data/n5_kanji_data.dart';
@@ -10,7 +11,7 @@ class DataSeeder {
     final List<Lesson> lessons = [];
     for (int i = 1; i <= 25; i++) {
       try {
-        final content = await rootBundle.loadString('assets/vocab/bai$i.txt');
+        final content = await rootBundle.loadString('assets/vocab/vocab$i.txt');
         final vocab = _parseTxtVocab(content, i);
         lessons.add(
           Lesson(
@@ -21,6 +22,7 @@ class DataSeeder {
           ),
         );
       } catch (e) {
+        debugPrint('Failed to load vocab$i.txt: $e');
         // Fallback for missing assets
         lessons.add(
           Lesson(

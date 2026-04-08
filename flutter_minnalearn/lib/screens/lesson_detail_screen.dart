@@ -29,7 +29,7 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
 
   Future<void> _refreshLesson() async {
     final lessons = await DatabaseService().getLessons();
-    final updated = lessons.firstWhere((l) => l.id == _currentLesson.id);
+    final updated = lessons.firstWhere((l) => l.id == _currentLesson.id, orElse: () => _currentLesson);
     if (mounted) {
       setState(() {
         _currentLesson = updated;

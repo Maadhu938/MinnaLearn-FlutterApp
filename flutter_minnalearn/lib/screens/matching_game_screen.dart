@@ -9,6 +9,7 @@ import '../services/database_service.dart';
 import '../services/speech_service.dart';
 import '../services/audio_service.dart';
 import '../services/study_timer_service.dart';
+import '../services/achievement_service.dart';
 import '../utils/vocabulary_display.dart';
 
 class MatchingGameScreen extends StatefulWidget {
@@ -44,6 +45,7 @@ class _MatchingGameScreenState extends State<MatchingGameScreen> {
   void initState() {
     super.initState();
     StudyTimerService().startTimer();
+    DatabaseService().updateStreak();
     _initGame();
   }
 
@@ -109,6 +111,8 @@ class _MatchingGameScreenState extends State<MatchingGameScreen> {
       return;
     }
 
+    // Set checking guard immediately before async work
+    _isChecking = true;
     final kanaId = _selectedKanaId!;
     final meaningId = _selectedMeaningId!;
     _attempts += 1;
@@ -116,7 +120,6 @@ class _MatchingGameScreenState extends State<MatchingGameScreen> {
     if (kanaId == meaningId) {
       SpeechService().playCorrectAnswer();
       setState(() {
-        _isChecking = true;
         _correctKanaId = kanaId;
         _correctMeaningId = meaningId;
       });
@@ -144,7 +147,6 @@ class _MatchingGameScreenState extends State<MatchingGameScreen> {
     }
 
     setState(() {
-      _isChecking = true;
       _wrongKanaId = kanaId;
       _wrongMeaningId = meaningId;
     });
@@ -173,6 +175,9 @@ class _MatchingGameScreenState extends State<MatchingGameScreen> {
     final penalty = max(0, _attempts - _gameWords.length) * 10;
     final score = max(20, 100 - penalty);
     await DatabaseService().saveGameScore('Match Game', score);
+    if (mounted) {
+      AchievementService().checkAchievements(context: context);
+    }
   }
 
   @override

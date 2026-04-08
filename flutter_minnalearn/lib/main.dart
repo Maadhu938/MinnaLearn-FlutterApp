@@ -1,8 +1,11 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_core/firebase_core.dart';
+
+import 'firebase_options.dart';
 import 'screens/startup_screen.dart';
 import 'services/notification_service.dart';
 import 'services/analytics_service.dart';
@@ -22,9 +25,16 @@ void main() async {
   );
   
   try {
-    await Firebase.initializeApp();
+    if (Platform.isAndroid) {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+      debugPrint('Firebase initialized (Android)');
+    } else {
+      debugPrint('Firebase init skipped: unsupported platform $defaultTargetPlatform');
+    }
   } catch (e) {
-    debugPrint('Firebase initialization skipped (not configured): $e');
+    debugPrint('Firebase init failed: $e - Analytics/notifications may be limited');
   }
   
   final NotificationService notificationService = NotificationService();

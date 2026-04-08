@@ -7,6 +7,7 @@ import '../services/quiz_engine.dart';
 import '../services/database_service.dart';
 import '../services/study_timer_service.dart';
 import '../services/audio_service.dart';
+import '../services/achievement_service.dart';
 
 class QuizScreen extends StatefulWidget {
   final Lesson lesson;
@@ -24,6 +25,7 @@ class _QuizScreenState extends State<QuizScreen> {
   bool _isAnswered = false;
   int? _selectedOptionIndex;
   bool _showResults = false;
+  int _questionGeneration = 0;
 
   @override
   void initState() {
@@ -41,6 +43,8 @@ class _QuizScreenState extends State<QuizScreen> {
   void _handleAnswer(int optionIndex) {
     if (_isAnswered) return;
 
+    final generation = _questionGeneration;
+
     setState(() {
       _isAnswered = true;
       _selectedOptionIndex = optionIndex;
@@ -54,7 +58,7 @@ class _QuizScreenState extends State<QuizScreen> {
 
     if (_currentIndex < _questions.length - 1) {
       Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) {
+        if (mounted && generation == _questionGeneration) {
           setState(() {
             _currentIndex++;
             _isAnswered = false;
@@ -74,11 +78,92 @@ class _QuizScreenState extends State<QuizScreen> {
   Future<void> _updateLessonProgress() async {
     if (_questions.isEmpty) return;
     double progress = _score / _questions.length;
-    // Only update if current performance is better
-    if (progress > widget.lesson.progress) {
+    final bool wasCompleted = widget.lesson.progress >= 1.0;
+    // Re-query current progress from database to avoid stale comparison after cloud sync
+    final currentLessons = await DatabaseService().getLessons();
+    final currentLesson = currentLessons.firstWhere(
+      (l) => l.id == widget.lesson.id,
+      orElse: () => widget.lesson,
+    );
+    if (progress > currentLesson.progress) {
       await DatabaseService().updateLessonProgress(widget.lesson.id, progress);
     }
     await DatabaseService().updateStreak();
+
+    if (mounted) {
+      await AchievementService().checkAchievements(
+        context: context,
+        lastScore: (_score / _questions.length * 100).toInt(),
+      );
+    }
+
+    // Show lesson completion popup when lesson reaches 100% for the first time
+    if (progress >= 1.0 && !wasCompleted && mounted) {
+      await Future.delayed(const Duration(milliseconds: 300));
+      if (mounted) {
+        _showLessonCompletionDialog();
+      }
+    }
+  }
+
+  void _showLessonCompletionDialog() {
+    AudioService().playLevelComplete();
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(LucideIcons.trophy, size: 48, color: Colors.green),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Sugoi desu ne!',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF1F2937),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Lesson ${widget.lesson.id} completed!',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  color: const Color(0xFF6B7280),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  child: const Text('Yatta!', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override

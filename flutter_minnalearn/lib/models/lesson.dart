@@ -115,7 +115,7 @@ class Lesson {
       id: map['id'],
       title: map['title'],
       completed: map['completed'] == 1,
-      progress: (map['progress'] as num).toDouble(),
+      progress: (map['progress'] as num?)?.toDouble() ?? 0.0,
       vocabulary: vocab,
       kanji: kanji,
     );

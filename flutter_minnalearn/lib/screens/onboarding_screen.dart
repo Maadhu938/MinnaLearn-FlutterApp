@@ -20,7 +20,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final List<Map<String, dynamic>> _pages = [
     {
       'title': 'Learn Japanese\nEffortlessly',
-      'description': 'Master Minna no Nihongo N5 vocabulary and kanji with our interactive lessons.',
+      'description': 'Master JLPT N5 vocabulary and kanji with our interactive lessons.',
       'icon': LucideIcons.bookOpen,
       'color': Colors.pink,
     },

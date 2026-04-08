@@ -6,7 +6,6 @@ import '../models/lesson.dart';
 import 'matching_game_screen.dart';
 import 'memory_cards_screen.dart';
 import 'typing_test_screen.dart';
-import 'word_catch_screen.dart';
 
 class LessonGamesScreen extends StatelessWidget {
   final Lesson lesson;
@@ -16,7 +15,6 @@ class LessonGamesScreen extends StatelessWidget {
   bool get _hasMatchingWords => lesson.vocabulary.length >= 5;
   bool get _hasMemoryWords => lesson.vocabulary.length >= 4;
   bool get _hasTypingWords => lesson.vocabulary.isNotEmpty;
-  bool get _hasWordCatchWords => lesson.vocabulary.length >= 4;
 
   @override
   Widget build(BuildContext context) {
@@ -125,18 +123,6 @@ class LessonGamesScreen extends StatelessWidget {
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => TypingTestScreen(lesson: lesson)),
-                    ),
-                  ),
-                  _buildGameCard(
-                    context,
-                    title: 'Word Catch',
-                    description: _hasWordCatchWords ? 'Tap the right falling kana in time' : 'Need at least 4 words',
-                    icon: LucideIcons.sparkles,
-                    colors: const [Color(0xFFFB923C), Color(0xFFF97316)],
-                    isLocked: !_hasWordCatchWords,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => WordCatchScreen(lesson: lesson)),
                     ),
                   ),
                 ],

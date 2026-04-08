@@ -9,6 +9,7 @@ import '../models/lesson.dart';
 import '../services/audio_service.dart';
 import '../services/database_service.dart';
 import '../services/achievement_service.dart';
+import '../services/study_timer_service.dart';
 
 class KanaPuzzleScreen extends StatefulWidget {
   final Lesson lesson;
@@ -38,6 +39,8 @@ class _KanaPuzzleScreenState extends State<KanaPuzzleScreen> {
   @override
   void initState() {
     super.initState();
+    StudyTimerService().startTimer();
+    DatabaseService().updateStreak();
     _vocabPool = List.from(widget.lesson.vocabulary)
       ..removeWhere((v) => v.romaji.isEmpty);
       

@@ -26,7 +26,7 @@ class _GrammarScreenState extends State<GrammarScreen> {
 
   Future<void> _loadGrammar() async {
     try {
-      final content = await rootBundle.loadString('assets/grammar/grammarbai${widget.lesson.id}.txt');
+      final content = await rootBundle.loadString('assets/grammar/grammar${widget.lesson.id}.txt');
       final points = _parseGrammar(content);
       if (mounted) {
         setState(() {

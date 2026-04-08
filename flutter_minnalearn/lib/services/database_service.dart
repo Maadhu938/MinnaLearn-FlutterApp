@@ -4,7 +4,6 @@ import 'package:path/path.dart' as p;
 import '../models/lesson.dart';
 import 'data_seeder.dart';
 import 'cloud_service.dart';
-import 'achievement_service.dart';
 
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
@@ -338,7 +337,11 @@ class DatabaseService {
     // Sync to cloud
     final streak = await getStreak();
     final totalTime = await getTotalStudyTime();
-    CloudService().pushStats(streak, totalTime);
+    try {
+      await CloudService().pushStats(streak, totalTime);
+    } catch (e) {
+      debugPrint('Failed to push stats to cloud: $e');
+    }
   }
 
   Future<int> getTodayStudySeconds() async {
@@ -391,9 +394,10 @@ class DatabaseService {
     int streak = 0;
     final streakResult = await db.query('user_stats', where: 'key = ?', whereArgs: ['current_streak']);
     if (streakResult.isNotEmpty) {
-      streak = (streakResult.first['value_int'] as int);
+      streak = (streakResult.first['value_int'] as int? ?? 0);
     }
 
+    bool streakJustLost = false;
     if (lastDate != '') {
       DateTime todayDT = DateTime.parse(today);
       DateTime lastDateDT = DateTime.parse(lastDate);
@@ -402,7 +406,8 @@ class DatabaseService {
       if (diff == 1) {
         streak += 1;
       } else if (diff > 1) {
-        // Gap of 2+ days: reset streak
+        // Gap of 2+ days: streak lost, reset to 1
+        streakJustLost = streak > 0;
         streak = 1;
       }
       // if diff == 0, keep same streak
@@ -412,6 +417,44 @@ class DatabaseService {
 
     await db.update('user_stats', {'value_int': streak}, where: 'key = ?', whereArgs: ['current_streak']);
     await db.update('user_stats', {'value_text': today}, where: 'key = ?', whereArgs: ['last_study_date']);
+    
+    // Store streak lost flag for UI to show message
+    if (streakJustLost) {
+      await db.update('user_stats', {'value_int': 1}, where: 'key = ?', whereArgs: ['streak_just_lost']);
+    }
+  }
+
+  /// Get warning message if user hasn't studied yet today and it's evening
+  Future<String?> getStreakWarningMessage() async {
+    final now = DateTime.now();
+    final hour = now.hour;
+    
+    // Only show warning after 6 PM (18:00)
+    if (hour < 18) return null;
+    
+    final lastStudyResult = await database;
+    final result = await lastStudyResult.query('user_stats', where: 'key = ?', whereArgs: ['last_study_date']);
+    String lastDateRaw = result.isNotEmpty ? (result.first['value_text'] as String? ?? '') : '';
+    String lastDate = lastDateRaw.contains('T') ? lastDateRaw.split('T')[0] : lastDateRaw;
+    String today = DateTime.now().toIso8601String().split('T')[0];
+    
+    // If already studied today, no warning needed
+    if (lastDate == today) return null;
+    
+    int hoursLeft = 24 - hour;
+    return 'Study now to keep your streak! $hoursLeft hours left.';
+  }
+
+  /// Check if streak was just lost (for showing reset message)
+  Future<bool> wasStreakJustLost() async {
+    final db = await database;
+    final result = await db.query('user_stats', where: 'key = ?', whereArgs: ['streak_just_lost']);
+    bool lost = result.isNotEmpty && (result.first['value_int'] as int? ?? 0) == 1;
+    // Reset the flag after reading
+    if (lost) {
+      await db.update('user_stats', {'value_int': 0}, where: 'key = ?', whereArgs: ['streak_just_lost']);
+    }
+    return lost;
   }
 
   Future<int> getStreak() async {
@@ -578,9 +621,11 @@ class DatabaseService {
   Future<Map<String, double>> getMasteryPercentages() async {
     final db = await database;
     
-    // Vocabulary mastery: sum of progress / count
-    final vocabProgress = await db.rawQuery('SELECT AVG(progress) as avg FROM lessons');
-    final vMastery = (vocabProgress.first['avg'] as num?)?.toDouble() ?? 0.0;
+    // Vocabulary mastery: learned vocab / total vocab based on actual vocabulary items
+    final totalVocabResult = await db.rawQuery('SELECT COUNT(*) as count FROM vocabulary');
+    final totalVocab = Sqflite.firstIntValue(totalVocabResult) ?? 0;
+    final learnedVocab = await getLearnedVocabularyCount();
+    final vMastery = totalVocab > 0 ? learnedVocab / totalVocab : 0.0;
 
     // Kanji mastery: unique learned count / total count
     final totalKanji = await getTotalKanjiCount();
@@ -681,7 +726,7 @@ class DatabaseService {
     final lessons = await getLessons();
     return lessons.fold<int>(
       0,
-      (total, lesson) => total + (lesson.vocabulary.length * lesson.progress).round(),
+      (total, lesson) => total + (lesson.vocabulary.length * lesson.progress).floor(),
     );
   }
 
@@ -704,7 +749,11 @@ class DatabaseService {
     notifyDataChanged();
     
     final allKanji = await getAllLearnedKanjiChars();
-    CloudService().pushLearnedKanji(allKanji);
+    try {
+      await CloudService().pushLearnedKanji(allKanji);
+    } catch (e) {
+      debugPrint('Failed to push learned kanji to cloud: $e');
+    }
   }
 
   Future<List<String>> getAllLearnedKanjiChars() async {
@@ -752,12 +801,26 @@ class DatabaseService {
     // Clear user stats and re-add defaults
     await db.delete('user_stats');
     await _ensureUserStatsDefaults(db);
-    // Clear all user-specific data
-    await db.delete('learned_kanji');
-    await db.delete('bookmarks');
-    await db.delete('achievements');
-    await db.delete('study_sessions');
-    await db.delete('game_scores');
+    // Clear all user-specific data (each delete is isolated so one failure doesn't block others)
+    try { await db.delete('learned_kanji'); } catch (e) { debugPrint('Failed to delete learned_kanji: $e'); }
+    try { await db.delete('bookmarked_vocabulary'); } catch (e) { debugPrint('Failed to delete bookmarked_vocabulary: $e'); }
+    try { await db.delete('achievements'); } catch (e) { debugPrint('Failed to delete achievements: $e'); }
+    try { await db.delete('study_sessions'); } catch (e) { debugPrint('Failed to delete study_sessions: $e'); }
+    try { await db.delete('game_scores'); } catch (e) { debugPrint('Failed to delete game_scores: $e'); }
     notifyDataChanged();
+  }
+
+  /// Reset all user progress without deleting reference data (vocabulary, kanji).
+  /// Use on login to clear stale progress before pulling from cloud.
+  Future<void> resetProgress() async {
+    final db = await database;
+    await db.update('lessons', {'completed': 0, 'progress': 0.0});
+    await db.delete('user_stats');
+    await _ensureUserStatsDefaults(db);
+    try { await db.delete('learned_kanji'); } catch (e) { debugPrint('Failed to delete learned_kanji: $e'); }
+    try { await db.delete('bookmarked_vocabulary'); } catch (e) { debugPrint('Failed to delete bookmarked_vocabulary: $e'); }
+    try { await db.delete('achievements'); } catch (e) { debugPrint('Failed to delete achievements: $e'); }
+    try { await db.delete('study_sessions'); } catch (e) { debugPrint('Failed to delete study_sessions: $e'); }
+    try { await db.delete('game_scores'); } catch (e) { debugPrint('Failed to delete game_scores: $e'); }
   }
 }

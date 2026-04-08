@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:sqflite/sqflite.dart';
 import 'database_service.dart';
 
 class CloudService {
@@ -58,23 +59,40 @@ class CloudService {
         }
       }
 
-      // 2. Sync Lesson Progress
+      // 2. Sync Lesson Progress (write directly to SQLite to avoid triggering cloud push)
       if (data.containsKey('lessons')) {
-        final lessons = data['lessons'] as Map<String, dynamic>;
-        for (var entry in lessons.entries) {
+        final lessonsData = data['lessons'] as Map<String, dynamic>;
+        final dbInstance = await db.database;
+        for (var entry in lessonsData.entries) {
           final lessonId = int.tryParse(entry.key);
           if (lessonId != null) {
             final progress = (entry.value['progress'] as num?)?.toDouble() ?? 0.0;
-            await db.updateLessonProgress(lessonId, progress);
+            await dbInstance.update(
+              'lessons',
+              {
+                'completed': progress >= 1.0 ? 1 : 0,
+                'progress': progress,
+              },
+              where: 'id = ?',
+              whereArgs: [lessonId],
+            );
           }
         }
       }
 
-      // 3. Sync Learned Kanji
+      // 3. Sync Learned Kanji (write directly to SQLite to avoid triggering cloud push)
       if (data.containsKey('learned_kanji')) {
         final kanjiSet = Set<String>.from(data['learned_kanji']);
+        final dbInstance = await db.database;
         for (var char in kanjiSet) {
-          await db.markKanjiAsLearned(char);
+          await dbInstance.insert(
+            'learned_kanji',
+            {
+              'character': char,
+              'learned_at': DateTime.now().toIso8601String(),
+            },
+            conflictAlgorithm: ConflictAlgorithm.ignore,
+          );
         }
       }
 
@@ -146,7 +164,7 @@ class CloudService {
       await fs.collection('users').doc(uid).update({
         'stats.current_streak': streak,
         'stats.total_study_time_seconds': totalTime,
-        'stats.last_study_date': DateTime.now().toIso8601String(),
+        'stats.last_study_date': DateTime.now().toIso8601String().split('T')[0],
         'stats.last_sync': FieldValue.serverTimestamp(),
       });
     } catch (e) {

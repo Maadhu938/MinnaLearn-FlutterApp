@@ -8,6 +8,7 @@ import '../models/lesson.dart';
 import '../services/database_service.dart';
 import '../services/study_timer_service.dart';
 import '../services/audio_service.dart';
+import '../services/achievement_service.dart';
 import '../widgets/kanji_drawing_board.dart';
 
 enum _KanjiPracticeMode {
@@ -23,7 +24,16 @@ class KanjiScreen extends StatefulWidget {
   static Future<void> prefetch() async {
     if (_KanjiScreenState._cachedKanji.isNotEmpty) return;
     final lessons = await DatabaseService().getLessons();
-    _KanjiScreenState._cachedKanji = lessons.expand((l) => l.kanji).toList();
+    final seen = <String>{};
+    _KanjiScreenState._cachedKanji = lessons
+        .expand((l) => l.kanji)
+        .where((k) => seen.add(k.character))
+        .toList();
+  }
+
+  /// Clear the static cache (call on user switch or data deletion).
+  static void clearCache() {
+    _KanjiScreenState._cachedKanji = [];
   }
 
   @override
@@ -62,7 +72,11 @@ class _KanjiScreenState extends State<KanjiScreen> {
     _isLoading = true;
     try {
       final lessons = await DatabaseService().getLessons();
-      final kanji = lessons.expand((l) => l.kanji).toList();
+      final seen = <String>{};
+      final kanji = lessons
+          .expand((l) => l.kanji)
+          .where((k) => seen.add(k.character))
+          .toList();
       _cachedKanji = kanji;
       if (mounted) {
         setState(() {
@@ -179,6 +193,7 @@ class _KanjiScreenState extends State<KanjiScreen> {
       AudioService().playCorrect();
       DatabaseService().markKanjiAsLearned(_selectedKanji!.character);
       DatabaseService().updateStreak();
+      AchievementService().checkAchievements(context: context);
     } else {
       AudioService().playWrong();
     }

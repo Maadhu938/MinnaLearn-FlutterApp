@@ -104,6 +104,12 @@ class QuizEngine {
         ? ['practice', 'review', 'study', 'lesson']
         : ['option a', 'option b', 'option c', 'option d'];
     var i = 0;
+    // Only use fallback distractors if the pool had no valid items at all
+    while (options.length < 4 && pool.length >= 4) {
+      options.add(fallbackDistractors[i % fallbackDistractors.length]);
+      i++;
+    }
+    // If still less than 4, allow fallback for small pools but mark clearly
     while (options.length < 4) {
       options.add(fallbackDistractors[i % fallbackDistractors.length]);
       i++;

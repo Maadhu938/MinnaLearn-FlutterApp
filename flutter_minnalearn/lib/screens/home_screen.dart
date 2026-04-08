@@ -16,11 +16,27 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  late Future<Map<String, dynamic>> _statsFuture;
+
   @override
   void initState() {
     super.initState();
+    _statsFuture = _fetchStats();
     DatabaseService.refreshNotifier.addListener(_refresh);
     KanjiScreen.prefetch(); // Pre-load kanji data in background
+  }
+
+  Future<Map<String, dynamic>> _fetchStats() async {
+    final results = await Future.wait([
+      DatabaseService().getLearnedVocabularyCount(),
+      DatabaseService().getLearnedKanjiCount(),
+      StudyTimerService().getFormattedStudyTime(),
+    ]);
+    return {
+      'vocab': results[0],
+      'kanji': results[1],
+      'studyTime': results[2],
+    };
   }
 
   @override
@@ -30,7 +46,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _refresh() {
-    if (mounted) setState(() {});
+    if (mounted) {
+      setState(() {
+        _statsFuture = _fetchStats();
+      });
+    }
   }
 
   @override
@@ -63,7 +83,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Welcome back!',
+                    'Hello Learner!',
                     style: GoogleFonts.inter(
                       color: Colors.white.withOpacity(0.8),
                       fontSize: 14,
@@ -71,7 +91,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Minna no Nihongo',
+                    'MinnaLearn',
                     style: GoogleFonts.inter(
                       color: Colors.white,
                       fontSize: 30,
@@ -107,15 +127,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
 
             FutureBuilder<Map<String, dynamic>>(
-              future: Future.wait([
-                DatabaseService().getLearnedVocabularyCount(),
-                DatabaseService().getLearnedKanjiCount(),
-                StudyTimerService().getFormattedStudyTime(),
-              ]).then((results) => {
-                'vocab': results[0],
-                'kanji': results[1],
-                'studyTime': results[2],
-              }),
+              future: _statsFuture,
               builder: (context, snapshot) {
                 final vocabCount = snapshot.data?['vocab'] ?? 0;
                 final kanjiCount = snapshot.data?['kanji'] ?? 0;

@@ -35,8 +35,6 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
         _currentIndex++;
         _isFlipped = false;
       });
-      // Trigger streak update when moving through cards
-      DatabaseService().updateStreak();
     }
   }
 
@@ -67,8 +65,13 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Japanese voice is not available on this device yet.'),
+      SnackBar(
+        content: const Text('Japanese voice not available. Download it from Settings → Languages → Text-to-speech voice'),
+        action: SnackBarAction(
+          label: 'OPEN SETTINGS',
+          onPressed: () => SpeechService().openTtsSettings(),
+        ),
+        duration: const Duration(seconds: 5),
       ),
     );
   }
@@ -77,6 +80,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
   void initState() {
     super.initState();
     StudyTimerService().startTimer();
+    DatabaseService().updateStreak();
   }
 
   @override

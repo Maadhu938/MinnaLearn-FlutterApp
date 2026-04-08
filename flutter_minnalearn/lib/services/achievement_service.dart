@@ -24,6 +24,26 @@ class Achievement {
     required this.color,
     required this.type,
   });
+
+  int getCurrentValue({
+    required int completedLessons,
+    required int streak,
+    required int kanjiCount,
+    required int vocabCount,
+  }) {
+    switch (type) {
+      case _AchievementType.lessons:
+        return completedLessons;
+      case _AchievementType.streak:
+        return streak;
+      case _AchievementType.kanji:
+        return kanjiCount;
+      case _AchievementType.vocabulary:
+        return vocabCount;
+      case _AchievementType.score:
+        return 0; // Score is transient, shown as 0 until unlocked
+    }
+  }
 }
 
 enum _AchievementType { lessons, streak, vocabulary, kanji, score }
@@ -191,10 +211,10 @@ class AchievementService {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.pink.withOpacity(0.1),
+                  color: achievement.color.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(achievement.icon, size: 48, color: Colors.pink),
+                child: Icon(achievement.icon, size: 48, color: achievement.color),
               ),
               const SizedBox(height: 20),
               Text(
@@ -202,7 +222,7 @@ class AchievementService {
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Colors.pink,
+                  color: achievement.color,
                 ),
               ),
               const SizedBox(height: 8),

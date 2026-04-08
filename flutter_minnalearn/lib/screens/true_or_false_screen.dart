@@ -9,6 +9,7 @@ import '../models/lesson.dart';
 import '../services/database_service.dart';
 import '../services/speech_service.dart';
 import '../services/study_timer_service.dart';
+import '../services/achievement_service.dart';
 import '../utils/vocabulary_display.dart';
 
 class TrueOrFalseScreen extends StatefulWidget {
@@ -43,6 +44,7 @@ class _TrueOrFalseScreenState extends State<TrueOrFalseScreen> {
   void initState() {
     super.initState();
     StudyTimerService().startTimer();
+    DatabaseService().updateStreak();
     _vocabPool = List.from(widget.lesson.vocabulary)
       ..removeWhere((v) => v.meaning.trim().isEmpty);
     _startGame();
@@ -94,6 +96,7 @@ class _TrueOrFalseScreenState extends State<TrueOrFalseScreen> {
       _isGameOver = true;
     });
     DatabaseService().saveGameScore('True or False', _score);
+    AchievementService().checkAchievements(context: context);
   }
 
   void _loadNextQuestion() {
