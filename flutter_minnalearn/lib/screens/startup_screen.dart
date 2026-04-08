@@ -18,6 +18,8 @@ class StartupScreen extends StatefulWidget {
 
 class _StartupScreenState extends State<StartupScreen> {
   String? _errorMessage;
+  int _retryCount = 0;
+  static const int _maxRetries = 3;
 
   @override
   void initState() {
@@ -29,15 +31,23 @@ class _StartupScreenState extends State<StartupScreen> {
     try {
       final dbService = DatabaseService();
       await dbService.initialize();
-      
-      // Schedule notifications securely after DB is initialized
-      try {
-        await NotificationService().scheduleAllNotifications();
-      } catch (e) {
-        debugPrint('Failed to schedule notifications: $e');
-      }
+      await NotificationService().initialize();
 
       final hasSeenOnboarding = await dbService.hasSeenOnboarding();
+      if (!hasSeenOnboarding) {
+        // First time - request notification permission during onboarding flow
+        final granted = await NotificationService().requestPermission();
+        if (granted) {
+          await NotificationService().rescheduleAll();
+        }
+      } else {
+        // Returning users: attempt scheduling (permission should already be set)
+        try {
+          await NotificationService().rescheduleAll();
+        } catch (e) {
+          debugPrint('Failed to schedule notifications: $e');
+        }
+      }
       final currentUser = AuthService().currentUser;
 
       if (!mounted) {
@@ -47,8 +57,14 @@ class _StartupScreenState extends State<StartupScreen> {
       Widget nextScreen;
       
       if (currentUser != null) {
-        // Fire and forget, don't block startup
-        Future.microtask(() => CloudService().syncAll());
+      // Fire and forget, don't block startup (with error handling)
+      Future.microtask(() async {
+        try {
+          await CloudService().syncAll();
+        } catch (e) {
+          debugPrint('Background cloud sync failed: $e');
+        }
+      });
         nextScreen = const MainScreen();
       } else if (hasSeenOnboarding) {
         nextScreen = const AuthScreen();
@@ -72,8 +88,11 @@ class _StartupScreenState extends State<StartupScreen> {
       if (!mounted) {
         return;
       }
+      _retryCount++;
       setState(() {
-        _errorMessage = 'Could not start the app. Tap to try again.';
+        _errorMessage = _retryCount >= _maxRetries
+            ? 'Could not start the app after $_maxRetries attempts. Please restart the app.'
+            : 'Could not start the app. Tap to try again.';
       });
     }
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../services/database_service.dart';
 import '../services/study_timer_service.dart';
@@ -9,6 +10,7 @@ import '../services/auth_service.dart';
 import '../services/achievement_service.dart';
 import '../services/cloud_service.dart';
 import 'auth_screen.dart';
+import 'kanji_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -26,6 +28,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _studyTime = '0m';
   bool _isLoading = false;
   Set<String> _unlockedAchievementIds = {};
+  bool _disposed = false;
+  PackageInfo? _appInfo;
 
   final List<Achievement> _achievements = AchievementService().allAchievements;
 
@@ -33,11 +37,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     _loadStats();
+    _loadAppInfo();
     DatabaseService.refreshNotifier.addListener(_loadStats);
+  }
+
+  Future<void> _loadAppInfo() async {
+    final info = await PackageInfo.fromPlatform();
+    if (mounted && !_disposed) {
+      setState(() {
+        _appInfo = info;
+      });
+    }
   }
 
   @override
   void dispose() {
+    _disposed = true;
     DatabaseService.refreshNotifier.removeListener(_loadStats);
     super.dispose();
   }
@@ -51,7 +66,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final time = await StudyTimerService().getFormattedStudyTime();
     final unlockedIds = (await db.getUnlockedAchievementIds()).toSet();
 
-    if (!mounted) {
+    if (!mounted || _disposed) {
       return;
     }
 
@@ -148,6 +163,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 IconButton(
                   icon: const Icon(LucideIcons.logOut, color: Colors.white),
                   onPressed: () async {
+                    KanjiScreen.clearCache();
                     await _authService.signOut();
                     if (!mounted) return;
                     Navigator.of(context, rootNavigator: true).pushReplacement(
@@ -282,10 +298,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ..._achievements.map((achievement) {
                             final unlocked = _unlockedAchievementIds.contains(achievement.id);
                             final Color cardColor = achievement.color;
-                            final progress = unlocked ? 1.0 : 0.0;
-                            // For a truly dynamic display, we could query the Current Value
-                            // but for now, we'll show "Goal / Goal" if unlocked, or "0 / Goal" if locked
-                            final current = unlocked ? achievement.goal : 0;
+                            final current = unlocked
+                                ? achievement.goal
+                                : achievement.getCurrentValue(
+                                    completedLessons: _completedLessons,
+                                    streak: _streak,
+                                    kanjiCount: _kanjiCount,
+                                    vocabCount: _vocabCount,
+                                  ).clamp(0, achievement.goal);
+                            final progress = unlocked ? 1.0 : (current / achievement.goal).clamp(0.0, 1.0);
 
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 14),
@@ -410,40 +431,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   ),
                                   content: SingleChildScrollView(
                                     child: Text(
-                                      'Last updated: March 31, 2026\n\n'
-                                      'MinnaLearn is a Japanese language learning app developed to help users learn Japanese at the JLPT N5 level. We value your privacy and are committed to protecting your personal data.\n\n'
-                                      '1. Data We Collect\n'
-                                      '- Account info: email address and display name (via Firebase Authentication, including Google Sign-In).\n'
-                                      '- Study progress: lesson completion, study time, streaks, quiz scores, bookmarked vocabulary, learned kanji, and achievements.\n'
-                                      '- All progress data is stored locally on your device using SQLite and synced to Firebase Cloud Firestore if you are signed in.\n\n'
-                                      '2. How We Use Your Data\n'
-                                      '- To create and manage your account.\n'
-                                      '- To track your learning progress and streaks.\n'
-                                      '- To save and sync your data across devices using Firebase Cloud Firestore.\n'
-                                      '- To send local study reminders and notifications (with your permission).\n\n'
-                                      '3. Data Sharing\n'
-                                      '- Your data is shared with Firebase (Google) for authentication and cloud sync.\n'
-                                      '- We do not sell, rent, or share your personal data with any other third parties.\n'
-                                      '- No data is used for advertising or profiling purposes.\n\n'
-                                      '4. Data Storage & Security\n'
-                                      '- Your data is stored locally on your device and in Google Firebase Cloud Firestore.\n'
-                                      '- Firebase provides industry-standard encryption for data in transit and at rest.\n'
-                                      '- You can use the app offline without signing in; all data stays on your device.\n\n'
-                                      '5. Third-Party Services\n'
-                                      '- Firebase Authentication (Google): for sign-in functionality.\n'
-                                      '- Firebase Cloud Firestore: for cloud sync of your progress.\n'
-                                      '- These services are governed by Google\'s Privacy Policy.\n\n'
-                                      '6. Your Rights\n'
-                                      '- You may request access to, correction of, or deletion of your personal data at any time.\n'
-                                      '- Delete your account and all associated data from the app settings (Profile → Delete Account).\n'
-                                      '- Sign out at any time.\n\n'
-                                      '7. Children\'s Privacy\n'
-                                      '- MinnaLearn does not knowingly collect personal information from children under 13.\n'
-                                      '- If you believe a child has provided personal data, please contact us.\n\n'
-                                      '8. Changes to This Policy\n'
-                                      '- We may update this Privacy Policy from time to time. Changes will be posted in the app.\n\n'
-                                      '9. Contact\n'
-                                      '- For questions, concerns, or data deletion requests, contact us at maadhuavati7@gmail.com.',
+                                      'Last updated: April 8, 2026\n\n'
+                                      'This policy applies to MinnaLearn: Japanese N5 on Google Play. We respect your privacy and are committed to protecting your personal data.\n\n'
+                                      '1) Data We Collect\n'
+                                      '- Account: email and display name (Firebase Authentication / Google Sign-In).\n'
+                                      '- Learning: lesson completion, study time, streaks, quiz scores, bookmarked vocabulary, learned kanji, achievements.\n'
+                                      '- Usage: screen views and feature usage (first_open, session_start) via Firebase Analytics.\n'
+                                      '- Approximate location: city/region inferred from IP; no GPS/Wi-Fi/Bluetooth location is collected.\n'
+                                      '- Device: app version and device type for troubleshooting. Learning assets are bundled; no Firebase Storage downloads.\n\n'
+                                      '2) How We Use Data\n'
+                                      '- Create and manage your account; sync progress (Firestore).\n'
+                                      '- Track progress and streaks.\n'
+                                      '- Send local study reminders/streak alerts (with permission).\n'
+                                      '- Improve features using aggregated analytics.\n\n'
+                                      '3) Sharing\n'
+                                      '- Processed by Firebase (Google) for auth, analytics, and sync.\n'
+                                      '- We do not sell, rent, or share data with other third parties; no ads or profiling (ad ID disabled).\n\n'
+                                      '4) Storage & Security\n'
+                                      '- Stored locally in SQLite; synced to Firestore when signed in.\n'
+                                      '- Firebase encrypts data in transit and at rest.\n\n'
+                                      '5) Third-Party Services\n'
+                                      '- Firebase Authentication; Firebase Cloud Firestore; Firebase Analytics (all by Google; see Google Privacy Policy).\n\n'
+                                      '6) Your Rights\n'
+                                      '- Access, correct, or delete your data.\n'
+                                      '- Delete Account via Profile -> Delete Account.\n'
+                                      '- Sign out anytime.\n\n'
+                                      '7) Children\'s Privacy\n'
+                                      '- Not directed to children under 13; contact us if a child provided data.\n'
+                                      '- Rated IARC 3+; no ads.\n\n'
+                                      '8) Changes\n'
+                                      '- Updates will be posted in the app and on the docs page.\n\n'
+                                      '9) Contact\n'
+                                      '- maadhuavati7@gmail.com',
                                       style: GoogleFonts.inter(fontSize: 13, height: 1.5),
                                     ),
                                   ),
@@ -496,6 +515,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               color: const Color(0xFF9CA3AF),
                             ),
                           ),
+                          if (_appInfo != null) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              'Version ${_appInfo!.version} (${_appInfo!.buildNumber})',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                color: const Color(0xFF9CA3AF),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -522,15 +552,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ],
         ),
-        content: Text(
-          'This will permanently delete your account and all data including:\n\n'
-          '• Account (email and display name)\n'
-          '• Lesson progress and quiz scores\n'
-          '• Study time, streaks, and sessions\n'
-          '• Learned kanji and bookmarks\n'
-          '• Achievements and game scores\n\n'
-          'This action cannot be undone.',
-          style: GoogleFonts.inter(fontSize: 14, height: 1.5),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'This will permanently delete your account and all data including:\n\n'
+              '• Account (email and display name)\n'
+              '• Lesson progress and quiz scores\n'
+              '• Study time, streaks, and sessions\n'
+              '• Learned kanji and bookmarks\n'
+              '• Achievements and game scores\n\n'
+              'This action cannot be undone.',
+              style: GoogleFonts.inter(fontSize: 14, height: 1.5),
+            ),
+            const SizedBox(height: 16),
+            if (_appInfo != null)
+              Text(
+                'App version: ${_appInfo!.version} (${_appInfo!.buildNumber})',
+                style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF9CA3AF)),
+              ),
+          ],
         ),
         actions: [
           TextButton(
@@ -565,10 +607,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final user = _authService.currentUser;
       if (user == null) return;
 
-      // Step 1: Try to delete Firebase Auth account (requires recent login)
+      // Save UID before deleting auth
+      final uid = user.uid;
+
+      // Step 1: Delete from Firestore first (need auth to still be valid)
+      try {
+        await CloudService().deleteUserData(uid);
+      } catch (_) {}
+
+      // Step 2: Delete from local database
+      try {
+        await DatabaseService().deleteAllUserData();
+      } catch (_) {}
+
+      KanjiScreen.clearCache();
+
+      // Step 3: Try to delete Firebase Auth account (requires recent login)
       try {
         await user.delete();
-      }       on FirebaseAuthException catch (e) {
+      } on FirebaseAuthException catch (e) {
         if (e.code == 'requires-recent-login') {
           if (!mounted) return;
           messenger.showSnackBar(
@@ -585,19 +642,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
         rethrow;
       }
-
-      // Step 2: Delete from Firestore
-      try {
-        await CloudService().deleteUserData(user.uid);
-      } catch (_) {}
-
-      // Step 3: Delete from local database
-      try {
-        await DatabaseService().deleteAllUserData();
-      } catch (_) {}
-
-      // Step 4: Sign out and navigate
-      await _authService.signOut();
 
       if (!mounted) return;
       messenger.showSnackBar(
